@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="jcsv-1.4.0">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/app/libs/jcsv-1.4.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

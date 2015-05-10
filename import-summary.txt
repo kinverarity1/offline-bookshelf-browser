@@ -1,0 +1,84 @@
+ECLIPSE ANDROID PROJECT IMPORT SUMMARY
+======================================
+
+Ignored Files:
+--------------
+The following files were *not* copied into the new Gradle project; you
+should evaluate whether these are still needed in your project and if
+so manually move them:
+
+* .gitignore
+* APKs\
+* APKs\LibraryThingBrowser_1.4.1vc11.apk
+* APKs\LibraryThingBrowser_1.4.2vc12.apk
+* APKs\LibraryThingBrowser_1.4.3vc13.apk
+* APKs\LibraryThingBrowser_1.5.1vc15.apk
+* APKs\LibraryThingBrowser_1.5vc14.apk
+* APKs\LibraryThingBrowser_1.6.1vc17.apk
+* APKs\LibraryThingBrowser_1.6.2vc18.apk
+* APKs\LibraryThingBrowser_1.6.3vc19.apk
+* APKs\LibraryThingBrowser_1.6.4vc20.apk
+* APKs\LibraryThingBrowser_1.6.5vc21.apk
+* APKs\LibraryThingBrowser_1.6.6vc22.apk
+* APKs\LibraryThingBrowser_1.6vc16.apk
+* APKs\LibraryThingBrowser_1.7.2vc25.apk
+* APKs\LibraryThingBrowser_1.7.3vc26.apk
+* APKs\LibraryThingBrowser_1.7.4vc27.apk
+* APKs\LibraryThingBrowser_1.7.5vc28.apk
+* APKs\LibraryThingBrowser_1.8.2vc31.apk
+* APKs\LibraryThingBrowser_1.8.3vc32.apk
+* APKs\LibraryThingBrowser_1.8.4vc33.apk
+* APKs\LibraryThingBrowser_1.8.5vc34.apk
+* APKs\LibraryThingBrowser_1.8vc29-beta.apk
+* APKs\LibraryThingBrowser_2.apk
+* APKs\LibraryThingBrowser_3.apk
+* APKs\LibraryThingBrowser_4.apk
+* APKs\LibraryThingBrowser_5.apk
+* APKs\LibraryThingBrowser_6.apk
+* APKs\LibraryThingBrowser_7.apk
+* APKs\LibraryThingBrowser_8.apk
+* APKs\LibraryThingBrowser_9.apk
+* LICENSE
+* NEWS
+* README.md
+* TODO.txt
+* ic_launcher-web.png
+* proguard-project.txt
+
+Replaced Jars with Dependencies:
+--------------------------------
+The importer recognized the following .jar files as third party
+libraries and replaced them with Gradle dependencies instead. This has
+the advantage that more explicit version information is known, and the
+libraries can be updated automatically. However, it is possible that
+the .jar file in your project was of an older version than the
+dependency we picked, which could render the project not compileable.
+You can disable the jar replacement in the import wizard and try again:
+
+android-support-v4.jar => com.android.support:support-v4:18.0.0
+
+Moved Files:
+------------
+Android Gradle projects use a different directory structure than ADT
+Eclipse projects. Here's how the projects were restructured:
+
+* AndroidManifest.xml => app\src\main\AndroidManifest.xml
+* assets\ => app\src\main\assets\
+* libs\jcsv-1.4.0.jar => app\libs\jcsv-1.4.0.jar
+* res\ => app\src\main\res\
+* src\ => app\src\main\java\
+
+Next Steps:
+-----------
+You can now build the project. The Gradle project needs network
+connectivity to download dependencies.
+
+Bugs:
+-----
+If for some reason your project does not build, and you determine that
+it is due to a bug or limitation of the Eclipse to Gradle importer,
+please file a bug at http://b.android.com with category
+Component-Tools.
+
+(This import summary is for your information only, and can be deleted
+after import once you are satisfied with the results.)
