@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "com.kinverarity.offlinebookshelfbrowser"
-        minSdkVersion 5
+        minSdkVersion 9
         targetSdkVersion 22
         compileOptions {
             sourceCompatibility JavaVersion.VERSION_1_5
