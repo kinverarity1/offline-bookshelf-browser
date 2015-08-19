@@ -2,33 +2,22 @@ package com.kinverarity.offlinebookshelfbrowser;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.DataOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.ParseException;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.CookieStore;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.protocol.ClientContext;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.HTTP;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.util.EntityUtils;
 
 import android.app.AlertDialog;
 import android.app.ListActivity;
@@ -58,7 +47,6 @@ import com.googlecode.jcsv.CSVStrategy;
 import com.googlecode.jcsv.reader.CSVEntryParser;
 import com.googlecode.jcsv.reader.CSVReader;
 import com.googlecode.jcsv.reader.internal.CSVReaderBuilder;
-import com.kinverarity.offlinebookshelfbrowser.R;
 
 public class BookListActivity extends ListActivity {
     String TAG = "BookListActivity";
@@ -85,8 +73,6 @@ public class BookListActivity extends ListActivity {
     
     String currentSortOrder;
     
-    HttpContext localContext;
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         String METHOD = ".onCreate()";
@@ -99,10 +85,9 @@ public class BookListActivity extends ListActivity {
         logger.log(TAG + METHOD, "Start");
         
         currentSortOrder = sharedPref.getString("sortOrder", "_id");
-        
-        CookieStore cookieStore = new BasicCookieStore();
-        localContext = new BasicHttpContext();
-        localContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
+
+        // Persistent cookie handler across all URL connections
+        CookieHandler.setDefault( new CookieManager( null, CookiePolicy.ACCEPT_ALL ) );
 
         searchHandler = new SearchHandler(this);
         searchHandler.setIds();
@@ -527,9 +512,7 @@ public class BookListActivity extends ListActivity {
         protected void onPreExecute() {
             String METHOD = ":LTLoginDownload:onPreExecute(): ";
             logger.log(TAG + METHOD, "start");
-            
-            
-            
+
             dialog = new ProgressDialog(BookListActivity.this);
             dialog.setTitle("Downloading library...");
             dialog.setMessage("Logging in...");
@@ -551,7 +534,7 @@ public class BookListActivity extends ListActivity {
                    prefsEdit.commit();
                }
            } else if (progUpdate[0] == PROGRESS_SUCCESS) {
-               dialog.setMessage("Successfull! Let's import your books.");
+               dialog.setMessage("Successful! Let's import your books.");
            } else if (progUpdate[0] == PROGRESS_LOGIN_FAIL) {
                logger.log(TAG + METHOD, "Login failed.");
                dialog.setMessage("Login failed.");
@@ -565,83 +548,97 @@ public class BookListActivity extends ListActivity {
             String METHOD = ".LTLoginDownload.doInBackground()";
             logger.log(TAG + METHOD, "start");
             
-            HttpClient client = new DefaultHttpClient();
-            HttpPost loginPost = new HttpPost(
-                    "https://www.librarything.com/enter/start");
-
-            List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(3);
-            nameValuePairs
-            .add(new BasicNameValuePair("formusername", sharedPref.getString("lt_username", "")));
-            nameValuePairs.add(new BasicNameValuePair("formpassword",
-                    sharedPref.getString("lt_password", "")));
-            nameValuePairs.add(new BasicNameValuePair("index_signin_already",
-                    "Sign in"));
-            try {
-                loginPost.setEntity(new UrlEncodedFormEntity(nameValuePairs,
-                        HTTP.UTF_8));
-            } catch (UnsupportedEncodingException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-
-            HttpResponse loginResponse = null;
-            try {
-                loginResponse = client.execute(loginPost, localContext);
-            } catch (ClientProtocolException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            
             String loginResponseBody = "";
+
+            HttpURLConnection urlConnection = null;
             try {
-                loginResponseBody = EntityUtils.toString(loginResponse.getEntity(), HTTP.UTF_8);
-            } catch (ParseException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            } catch (IOException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
+                String loginPostContent = URLEncoder.encode("formusername", "UTF-8") + "="
+                        + URLEncoder.encode(sharedPref.getString("lt_username", ""), "UTF-8") + "&"
+                        + URLEncoder.encode("formpassword", "UTF-8") + "="
+                        + URLEncoder.encode(sharedPref.getString("lt_password", ""), "UTF-8") + "&"
+                        + URLEncoder.encode("index_signin_already", "UTF-8") + "="
+                        + URLEncoder.encode("Sign in", "UTF-8");
+
+                URL url = new URL("https://www.librarything.com/enter/start");
+                urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setDoOutput(true);
+                urlConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                urlConnection.setChunkedStreamingMode(0);
+
+                //Send request
+                DataOutputStream wr = new DataOutputStream(urlConnection.getOutputStream());
+                wr.writeBytes(loginPostContent);
+                wr.flush();
+                wr.close();
+
+                int responseCode = urlConnection.getResponseCode();
+
+                // follow redirect after successful login
+                if (urlConnection.getResponseCode() == HttpURLConnection.HTTP_MOVED_TEMP) {
+                    urlConnection.disconnect();
+                    url = new URL(urlConnection.getHeaderField("Location"));
+                    urlConnection = (HttpURLConnection) url.openConnection();
+                }
+
+                //Get Response
+                final String type = urlConnection.getHeaderField("Content-Type");
+                final String charset = type.substring(type.indexOf("charset")+8);
+
+                InputStream is = urlConnection.getInputStream();
+                BufferedReader rd = new BufferedReader(new InputStreamReader(is, charset));
+                String line;
+                StringBuilder response = new StringBuilder();
+                while ((line = rd.readLine()) != null) {
+                    response.append(line);
+                    response.append('\r');
+                }
+                rd.close();
+                loginResponseBody = response.toString();
             }
-            
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+            finally {
+                if (urlConnection != null)
+                    urlConnection.disconnect();
+            }
+
             logger.log(TAG + METHOD, "loginResponseBody=" + loginResponseBody);
             if (!loginResponseBody.contains("Home | LibraryThing")) {
                 logger.log(TAG + METHOD, "Login failed.");
                 this.publishProgress(PROGRESS_LOGIN_FAIL);
                 this.cancel(true);
-                loginPost.abort();
             } else {
                 logger.log(TAG + METHOD, "Login succeeded.");
                 this.publishProgress(PROGRESS_LOGGED_IN);
             }
-            
-            HttpGet downloadRequest = new HttpGet(
-                    "http://www.librarything.com/export-tab");
-            HttpResponse downloadResponse = null;
-            try {
-                downloadResponse = client.execute(downloadRequest,
-                        localContext);
-            } catch (ClientProtocolException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
 
-            logger.log(TAG + METHOD, "downloadResponse StatusLine=" + downloadResponse.getStatusLine().toString());
             String downloadResponseBody = "";
             try {
-                downloadResponseBody = EntityUtils.toString(downloadResponse
-                        .getEntity(), HTTP.UTF_16);
-            } catch (ParseException e) {
-                // TODO Auto-generated catch block
+                URL url = new URL("http://www.librarything.com/export-tab");
+                urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setReadTimeout(10000);
+
+                String type = urlConnection.getHeaderField("Content-Type");
+                String charset = type.substring(type.indexOf("charset")+8);
+
+                InputStream is = urlConnection.getInputStream();
+                BufferedReader rd = new BufferedReader(new InputStreamReader(is, charset));
+                String line;
+                StringBuilder response = new StringBuilder();
+                while((line = rd.readLine()) != null) {
+                    response.append(line);
+                    response.append('\r');
+                }
+                rd.close();
+                downloadResponseBody = response.toString();
+            }
+            catch (Exception e) {
                 e.printStackTrace();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            }
+            finally {
+                if (urlConnection != null)
+                    urlConnection.disconnect();
             }
 
             logger.log(TAG + METHOD, "downloadResponseBody=" + downloadResponseBody);
@@ -649,7 +646,21 @@ public class BookListActivity extends ListActivity {
             
             this.publishProgress(PROGRESS_SUCCESS);
             return "";
+        }
 
+        private String readStream(InputStream in) {
+            StringBuilder sb = new StringBuilder();
+            try {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+
+                String nextLine = "";
+                while ((nextLine = reader.readLine()) != null) {
+                    sb.append(nextLine);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return sb.toString();
         }
 
         protected void onPostExecute(String r) {
