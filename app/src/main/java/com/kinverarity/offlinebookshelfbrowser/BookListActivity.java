@@ -84,6 +84,7 @@ public class BookListActivity extends ListActivity {
     SharedPreferences.Editor prefsEdit;
     
     String currentSortOrder;
+    String currentViewName;
     
     HttpContext localContext;
 
@@ -106,8 +107,10 @@ public class BookListActivity extends ListActivity {
 
         searchHandler = new SearchHandler(this);
         searchHandler.setIds();
-        setTitle(getString(R.string.topbar_allbooks));
-        
+
+        currentViewName = getString(R.string.topbar_allbooks);
+        setTitle(currentViewName);        
+
         //Log.i(TAG + METHOD, "performance_track prior_to_intent_parsing ");
         
         intent = getIntent();
@@ -123,25 +126,25 @@ public class BookListActivity extends ListActivity {
             String query = intent.getStringExtra(SearchManager.QUERY);
             logger.log(TAG + METHOD, "Intent.ACTION_SEARCH query=" + query);
             searchHandler.restrictByQuery(query);
-            setTitle(query);
+            currentViewName = query;
             loadList();
         } else if (intent.hasExtra("tagName")) {
             String tag = intent.getStringExtra("tagName");
             logger.log(TAG + METHOD, "Intent has an extra: tagName=" + tag);
             searchHandler.restrictByTag(tag);
-            setTitle(tag);
+            currentViewName = tag;
             loadList();
         } else if (intent.hasExtra("collectionName")) {
             String collection = intent.getStringExtra("collectionName");
             logger.log(TAG + METHOD, "Intent has an extra: collectionName=" + collection);
             searchHandler.restrictByCollection(collection);
-            setTitle(collection);
+            currentViewName = collection;
             loadList();
         } else if (intent.hasExtra("authorName")) {
             String author = intent.getStringExtra("authorName");
             logger.log(TAG + METHOD, "Intent has an extra: authorName=" + author);
             searchHandler.restrictByAuthor(author);
-            setTitle(author);
+            currentViewName = author;
             loadList();
         } else if (intent.hasExtra("downloadBooks")) {
             logger.log(TAG + METHOD, "Intent has an extra: downloadBooks");
@@ -207,7 +210,8 @@ public class BookListActivity extends ListActivity {
         getListView().setFastScrollEnabled(true);
         
         setListAdapter(adapter);
-        
+        setTitle(currentViewName + " (" + adapter.getCount() + ")");
+
         //Log.i(TAG + METHOD, "performance_track loadList_finish");
     }
     
