@@ -464,7 +464,7 @@ public class BookListActivity extends ListActivity {
     
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
-        if (scanResult != null) {
+        if ((scanResult != null) && (scanResult.getContents() != null)) {
           // handle scan result
             String potentialISBN = scanResult.getContents();
             String searchString = "";
